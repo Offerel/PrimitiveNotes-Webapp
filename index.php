@@ -1,0 +1,468 @@
+<?php
+/**
+ * Notes
+ *
+ * @version 1.0.0
+ * @author Offerel
+ * @copyright Copyright (c) 2021, Offerel
+ * @license GNU General Public License, version 3
+ */
+session_start();
+include_once "config.inc.php.dist";
+include_once "config.inc.php";
+
+if((strlen($mailbox) > 0) && (!isset($_SESSION['iauth']))) {
+	if(!imapLogin($mailbox)) {
+		die();
+	}
+}
+
+sCookie($title, $media_folder);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+setlocale (LC_ALL, $lang);
+set_error_handler("e_log");
+
+$notes_path = ($notes_path[-1] === '/') ? $notes_path:$notes_path.'/';
+$notes_path = str_replace('%u%', $_SESSION['iauth'], $notes_path);
+
+if(isset($_GET['nimg'])) {
+	$file = urldecode($_GET['nimg']);
+	$fname = $notes_path.$media_folder.$file;
+	if(file_exists($fname)) {
+		$fileh = file_get_contents($fname);
+		$hash = sha1($fname);
+		$mime_type = mime_content_type($fname);
+		header("Content-type: $mime_type");
+		header("Content-Disposition: inline; filename=\"$file\"");
+		header("ETag: $hash");
+
+		if(isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+        	if($_SERVER['HTTP_IF_NONE_MATCH'] == $hash) {
+        		header('HTTP/1.1 304 Not Modified');
+        		exit();
+        	}
+        }
+        
+		header("Last-Modified: ".gmdate('D, d M Y H:i:s T', filemtime($fname)));
+		header('Content-Length: '.strlen($fileh));
+		echo $fileh;
+	}
+	die();
+}
+
+$tagArray = [];
+
+if(isset($_POST['action'])) {
+    $action = filter_var($_POST['action'], FILTER_SANITIZE_STRING);
+    switch ($action) {
+        case 'vNote':
+            $nName = filter_var($_POST['note'], FILTER_SANITIZE_STRING);
+            die(getNote($notes_path.$nName));
+            break;
+		case 'sNote':
+			die(json_encode(saveNote(json_decode($_POST['note'], true), $notes_path)));
+			break;
+		case 'dNote':
+			$file = $notes_path.filter_var($_POST['note'], FILTER_SANITIZE_STRING);
+			die(json_encode(delNote($file)));
+			break;
+		case 'dMedia':
+			$media = json_decode($_POST['media']);
+			foreach($media as $key => $file) {
+				unlink($notes_path.$media_folder.$file);
+				e_log(8,"$file deleted");
+			}
+			die(json_encode(1));
+			break;
+		case 'gNlist':
+			die(json_encode(createNotelist(getNotes($notes_path))));
+			break;
+		case 'uplImage':
+			$imageURL = filter_var($_POST['imageURL'], FILTER_SANITIZE_STRING);
+			$fname = time().image_type_to_extension(exif_imagetype($imageURL));
+			$img = $notes_path.$media_folder.$fname;
+			if (!is_dir($notes_path.$media_folder)) {
+				if(!mkdir($notes_path.$media_folder, 0774, true)) die(e_log(2,'Check media folder "$notes_path$media_folder" failed. Please check directory.'));
+			}
+			if(!file_put_contents($img, file_get_contents($imageURL))) {
+				die(e_log(2,"Can't write from URL image to media subfolder."));
+			}
+			die($media_folder.$fname);
+			break;
+		case 'logout':
+			e_log(8,'Logout user...');
+			unset($_SESSION['iauth']);
+			die();
+			break;
+        default:
+            die(e_log(8,"Not an action..."));
+            break;
+    }
+    die();
+}
+
+if(isset($_FILES['localFile']) && $_FILES['localFile']['error'] == 0 ) {
+	if(!is_dir($notes_path.$media_folder)) {
+		if(!mkdir($notes_path.$media_folder, 0774, true)) {
+			die(e_log(2,'Check media folder "$notes_path$media_folder" failed. Please check directory.'));
+		}
+	}
+	$fname = time().image_type_to_extension(exif_imagetype($_FILES['localFile']['tmp_name']));
+	if(!move_uploaded_file($_FILES['localFile']['tmp_name'], $notes_path.$media_folder.$fname)) {
+		die(e_log(2,"Can't write from local image to media subfolder."));
+	}
+	die($media_folder.$fname);
+}
+
+if(isset($_FILES['dropFile']) && $_FILES['dropFile']['error'] == 0 ) {
+	if(mime_content_type($_FILES['dropFile']['tmp_name']) == 'text/plain' && substr_compare($_FILES['dropFile']['name'], '.md', -3) === 0) {
+	    if(!move_uploaded_file($_FILES['dropFile']['tmp_name'], $notes_path.$_FILES['dropFile']['name'])) {
+			e_log(2, 'Can\'t move uploaded note.');
+	        die(json_encode(1));
+	    } else {
+			e_log(8,'File dropped to '.$notes_path.$_FILES['dropFile']['name']);
+	        die(json_encode(0));
+	    }
+	} else {
+		e_log(2,'Dropupload not a note file');
+	    die(json_encode(2));
+	}
+}
+
+function e_log($level, $message, $errfile="", $errline="") {
+	global $logfile,$loglevel;
+	switch($level) {
+		case 9:
+			$mode = "debug ";
+			break;
+		case 8:
+			$mode = "notice";
+			break;
+		case 4:
+			$mode = "parse ";
+			break;
+		case 2:
+			$mode = "warn  ";
+			break;
+		case 1:
+			$mode = "error ";
+			break;
+		default:
+			$mode = "unknown";
+			break;
+	}
+	if($errfile != "") $message = $message." in ".$errfile." on line ".$errline;
+	$user = $_SESSION['iauth'];
+	$line = "[".date("d-M-Y H:i:s")."] [$mode] $user - $message\n";
+
+	if($level <= $loglevel) {
+		$lfile = is_dir($logfile) ? $logfile.'/notes.log':$logfile;
+		file_put_contents($lfile, $line, FILE_APPEND);
+	}
+}
+
+function delNote($file) {
+	global $delMedia, $media_folder;
+	if(file_exists($file)) {
+		if(substr ($file, -3) == ".md" && $delMedia) {
+			$fcontent = file_get_contents($file);
+			preg_match_all('/(?:!\[(.*?)\]\((.*?)\))/m', $fcontent, $mediaFiles, PREG_SET_ORDER, 0);
+			$mfiles = [];
+			foreach($mediaFiles as $mKey => $mFile) {
+				if(strpos($mFile[2], $media_folder) !== false) $mfiles[] = basename($mFile[2]);
+			}
+		}
+		
+		if(!unlink($file)) {
+			$message = "Couldn't delete note '$file'. Please check permissions.";
+			e_log(2,$message);
+			$mArr = array('erg' => 0, 'message' => $message, 'data' => $mfiles);
+		} else {
+			if($mfiles) {
+				$message = 'Note deleted. Found '.count($mfiles).' media files in note. Do you want to delete them?';
+				e_log(8,$message);
+				$mArr = array('erg' => 1, 'message' => $message, 'data' => $mfiles);
+			} else {
+				$message = 'Note deleted.';
+				e_log(8,$message);
+				$mArr = array('erg' => 1, 'message' => $message, 'data' => 0);
+			}
+		}
+	} else {
+		$message = 'Note not found';
+		e_log(8,$message);
+		$mArr = array('erg' => 0, 'message' => $message, 'data' => null);
+	}
+
+	return $mArr;
+}
+
+function getHeader() {
+	global $title;
+    $header = "<!DOCTYPE html>
+	<html>
+		<head>
+			<title>$title</title>
+			<meta charset='utf-8'>
+			<meta name='viewport' content='width=device-width, initial-scale=1'>
+
+			<link rel='icon' type='image/png'  href='images/notes.png'>
+			
+			<link rel='stylesheet' href='js/highlight/styles/vs.min.css'>
+			<script src='js/highlight/highlight.pack.js'></script>
+
+			<link href='js/easymde/easymde.min.css' rel='stylesheet'>
+			<script src='js/easymde/easymde.min.js'></script>
+			
+			<link href='js/tagify/tagify.min.css' rel='stylesheet' type='text/css' />
+			<script src='js/tagify/tagify.min.js' type='text/javascript' charset='utf-8'></script>
+			
+			<script src='js/turndown/turndown.js'></script>
+			
+			<script src='js/notes.js' type='text/javascript' charset='utf-8'></script>
+			<link href='css/notes.css' rel='stylesheet' />
+		</head>
+		<body>";
+	
+	return $header;
+}
+
+function getFooter() {
+	$footer = "	</body>
+	</html>";
+	return $footer;
+}
+
+function createNotelist($notes) {
+	$nlist = '';
+	foreach ($notes[1] as $key => $note) {
+        $nlist.="<li data-tags='".$note['tags']."' data-na='".$note['fname']."' title='".$note['name']."'>
+            <!-- <div class='ntype' title='".$note['type']."'>".$note['type']."</div> -->
+    		<div class='mpart'>
+    			<div class='nname'>".$note['name']."</div>
+    			<div class='ntime'>".date("d.m.Y H:i",$note['time'])."</div>
+    		</div>
+    		<div class='nsize'>".human_filesize($note['size'],2)."</div>
+        </li>";
+    }
+	return $nlist;
+}
+
+function prepareLayout($notes_path) {
+	$layout = "<div id='parent'>
+	<div id='left'>
+		<div id='search'>
+			<input id='nsearch' type='text'>
+		</div>
+	<ul id='nlist'>";
+	e_log(8,"Read directory '$notes_path' for notes");
+	$notes = getNotes($notes_path);
+	$nlist = createNotelist($notes);
+	$layout2 = "</ul></div>
+	<div id='main'>
+		<div id='noteheader'>
+			<input id='ntitle' class='' />
+			<input id='ntags' class='tedit' />
+			<input id='allTags' type='hidden' value='".implode(",", $notes[0])."'><input id='fname' type='hidden'>
+			<fieldset id='ndata' class='mtoggle'>
+				<div><label for='author'>Author</label><input id='author' name='author' type='text' readonly='true'></div>
+				<div><label for='date'>Created</label><input id='date' name='date' type='text' readonly='true'></div>
+				<div><label for='updated'>Updated</label><input id='updated' name='updated' type='text' readonly='true'></div>
+				<div><label for='source'>Source</label><input id='source' name='source' type='text' readonly='true'></div>
+			</fieldset>
+			<input type='file' id='localFile' name='localFile' accept='image/png, image/jpeg'>
+		</div>
+		<div id='notebody'>
+			<textarea id='notesarea'></textarea>
+		</div>
+	</div></div>";
+	return $layout.$nlist.$layout2;
+}
+
+function human_filesize($size, $precision = 2) {
+    static $units = array('B','kB','MB','GB','TB','PB','EB','ZB','YB');
+    $step = 1024;
+    $i = 0;
+    while (($size / $step) > 0.9) {
+        $size = $size / $step;
+        $i++;
+    }
+    return round($size, $precision).$units[$i];
+}
+
+function saveNote($note, $path) {
+	$notecontent = "---\r\n";
+	$notecontent.= ($note['tags']) ? "tags: ".implode(" ", $note['tags'])."\r\n":"";
+	$notecontent.= ($note['nname']) ? "title: ".trim($note['nname'])."\r\n":"";
+	$notecontent.= ($note['date']) ? "date: ".trim($note['date'])."\r\n":'date: '.strftime('%x %X')."\r\n";
+	$notecontent.= 'updated: '.strftime('%x %X')."\r\n";
+	$notecontent.= ($note['author']) ? 'author: '.trim($note['author'])."\r\n":'';
+	$notecontent.= ($note['source']) ? 'source: '.trim($note['source'])."\r\n":'';
+	$notecontent.= "---\r\n";
+	$notecontent.= trim($note['content']);
+	$fname = $path.$note['oname'].'.'.$note['type'];
+	$erg = file_put_contents($fname, $notecontent);
+	$erg = ($note['oname'] != $note['nname']) ? rename($path.$note['oname'].'.'.$note['type'], $path.$note['nname'].'.'.$note['type']):$erg;
+	e_log(8,"Note saved to '$fname'");
+	return $erg;
+}
+
+function getNotes($notes_path) {
+	e_log(8,"Get list of notes from '$notes_path'");
+
+	global $tagArray;
+	$notes = array();
+	$id = 0;
+	
+	if(is_dir($notes_path)) {
+		if($ndir = opendir($notes_path)) {
+			while(false !== ($file = readdir($ndir))) {
+				$fpath = $notes_path.$file;
+				
+				if ($file != "." && $file != ".." && substr($file, 0, 1) != '.' && pathinfo($fpath, PATHINFO_EXTENSION) === 'md') {
+					if(is_file($fpath)) {
+						$bname = pathinfo($fpath,PATHINFO_BASENAME);
+						$nstr = (pathinfo($fpath,PATHINFO_EXTENSION) === 'md') ? getNotTags($fpath):'';
+						$notes[] = array(
+							'fname' => $bname,
+							'name'  => (strpos($bname, "[")) ? explode("[", $bname)[0]:substr($bname, 0, strrpos($bname, '.')),
+							'size'  => filesize($fpath),
+							'type'  => pathinfo($fpath,PATHINFO_EXTENSION),
+							'time'  => filemtime($fpath),
+							'tags'  => $nstr,
+							'id'    => $id,
+						);
+						$tagArray = array_merge($tagArray, explode(' ', $nstr));
+					}
+					$id++;
+				}
+			}
+			closedir($ndir);
+		}
+	}
+
+	if(is_array($notes) && count($notes) > 0) {
+		usort($notes, function($a, $b) { return $b['time'] > $a['time']; });
+	}
+
+	$tagArray = array_unique($tagArray);
+	sort($tagArray,SORT_NATURAL|SORT_FLAG_CASE);
+	$tagArray = array_filter($tagArray);
+	return array($tagArray,$notes);
+}
+
+function getNotTags($fpath) {
+	$contents = file_get_contents($fpath);
+	$yend = strpos($contents, '---', 3);
+	$yarr = preg_split("/\r\n|\n|\r/", substr($contents,0,$yend));
+	$tstr = '';
+	foreach($yarr as $line) {
+		if(strpos($line,"tags:") === 0) {
+			$tstr = substr($line,6);								
+		}
+	}
+	return $tstr;
+}
+
+function getNote($notePath) {
+	e_log(8,"Load '$notePath'");
+    $note = file_get_contents($notePath);
+    return $note;
+}
+
+function loginForm() {
+	global $title;
+
+	$vArr = explode("\n", file_get_contents(__FILE__, false, null, 0, 160));
+	foreach ($vArr as $line) {
+		$pos = strpos($line, "version");
+		if($pos > 0) {
+			$version = substr($line,12);
+			break;
+		}
+	}
+	
+	$form = "<form id='lform' method='POST' class='lform'>
+	<div id='lheader'>$title</div>
+	<div id='lbody'>
+		<input type='text' id='user' name='user' placeholder='Username' />
+		<input type='password' id='password' name='password' placeholder='Password' />
+	</div>
+	<div id='lfooter'>
+		<button id='login' name='login' value='login'>Login</button>
+	</div>
+	</form>
+	<div id='lpfooter'><a href='https://github.com/Offerel/PrimitiveNotes-Webapp'>PrimitiveNotes v$version</a></div>";
+	return $form;
+}
+
+function imapLogin($mailbox) {
+	global $title, $realm;
+
+	$success = false;
+	if(!isset($_SESSION['iauth']) && !isset($_POST['login'])) {
+		e_log(8,"Not authorized, show login...");
+		echo getHeader();
+		echo loginForm();
+		echo getFooter();
+	} else {
+		$username = isset($_POST['user']) ? filter_var($_POST['user'], FILTER_SANITIZE_STRING):$_SERVER['PHP_AUTH_USER'];
+		$password = isset($_POST['password']) ? filter_var($_POST['password'], FILTER_SANITIZE_STRING):$_SERVER['PHP_AUTH_PW'];
+		
+		e_log(8,"$username not authorized, try to login...");
+		
+		try {
+			e_log(8,"Using IMAP '$mailbox'");
+			$imap = imap_open($mailbox, $username, $password, OP_HALFOPEN | OP_READONLY, 1);
+			if ($imap) {
+				e_log(8,"IMAP Login successfull");
+				$_SESSION['iauth'] = $username;
+				$success = true;
+			}
+		} catch (\ErrorException $e) {
+			e_log(1,$e->getMessage());
+			unset($_SERVER['PHP_AUTH_USER']);
+			unset($_SERVER['iauth']);
+		}
+	}
+
+	$errors = imap_errors();
+	if ($errors) {
+		foreach ($errors as $error) {
+			e_log(1, $error);
+		}
+	}
+
+	if(isset($imap) && $imap) imap_close($imap);
+
+	return $success;
+}
+
+function sCookie($title, $media_folder) {
+	$ocookie = (isset($_COOKIE["primitivenotes"])) ? $_COOKIE["primitivenotes"]:'';
+	$acookie = json_decode($ocookie, true);
+	$barw = (isset($acookie['barw'])) ? $acookie['barw']:null;
+	
+	$cOptions = array (
+		'expires' => time() + (86400 * 30),
+		'path' => null,
+		'domain' => null,
+		'secure' => true,
+		'httponly' => false,
+		'samesite' => 'Strict'
+	);
+	
+	$cArr = array(
+		'title' => $title,
+		'mf'    => $media_folder,
+		'barw'	=> $barw,
+	);
+	setcookie("primitivenotes", json_encode($cArr), $cOptions);
+}
+
+echo getHeader();
+echo prepareLayout($notes_path);
+echo getFooter();
+?>
