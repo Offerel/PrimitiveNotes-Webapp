@@ -8,4 +8,5 @@ $loglevel = 9;                                  // loglevel; 9=debug; 8=notice; 
 $cexpjson = false;                              // if set to true, this saves a json file for http requests
 $lang = 'de_DE';                                // set the locale for dates and other values
 $mailbox = '{imap.strato.de:993/imap/ssl}';     // IMAP connection string, see https://www.php.net/manual/en/function.imap-open.php for possible values; set to null or empty for not authentication or using .htaccess
+$database = '/media/stick/db/notes.db';			// path to database, leave empty or set to null, if you dont need 'stay logged in' feature
 ?>

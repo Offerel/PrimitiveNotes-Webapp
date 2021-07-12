@@ -1,4 +1,4 @@
-bookmarks.db
-config.inc.php.dist
+notes.db
 .vscode/launch.json
 .vscode/sftp.json
+config.inc.php

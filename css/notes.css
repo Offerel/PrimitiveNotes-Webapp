@@ -82,6 +82,12 @@ button.LogoutB {
 #lform button:hover {
 	background-color: #0879d9;
 }
+#lbody label {
+	display: block;
+	text-align: right;
+	color: white;
+	text-shadow: -1px -1px 1px rgba(255,255,255,.1), 1px 1px 1px rgba(0,0,0,.5);
+}
 #lpfooter {
 	background-color: #00000082;
 	position: absolute;

@@ -93,6 +93,7 @@ if(isset($_POST['action'])) {
 			break;
 		case 'logout':
 			e_log(8,'Logout user...');
+			clearAuthCookie();
 			unset($_SESSION['iauth']);
 			die();
 			break;
@@ -154,7 +155,7 @@ function e_log($level, $message, $errfile="", $errline="") {
 			break;
 	}
 	if($errfile != "") $message = $message." in ".$errfile." on line ".$errline;
-	$user = $_SESSION['iauth'];
+	$user = (isset($_SESSION['iauth'])) ? $_SESSION['iauth']:'';
 	$line = "[".date("d-M-Y H:i:s")."] [$mode] $user - $message\n";
 
 	if($level <= $loglevel) {
@@ -221,8 +222,8 @@ function getHeader() {
 			
 			<script src='js/turndown/turndown.js'></script>
 			
-			<script src='js/notes.js' type='text/javascript' charset='utf-8'></script>
-			<link href='css/notes.css' rel='stylesheet' />
+			<script src='js/notes.min.js' type='text/javascript' charset='utf-8'></script>
+			<link href='css/notes.min.css' rel='stylesheet' />
 		</head>
 		<body>";
 	
@@ -373,7 +374,9 @@ function getNote($notePath) {
 }
 
 function loginForm() {
-	global $title;
+	global $title, $database;
+
+	$stay = (strlen($database) > 3) ? "<label for='remember'><input type='checkbox' id='remember' name='remember'>Stay logged in</label>":"";
 
 	$vArr = explode("\n", file_get_contents(__FILE__, false, null, 0, 160));
 	foreach ($vArr as $line) {
@@ -389,6 +392,7 @@ function loginForm() {
 	<div id='lbody'>
 		<input type='text' id='user' name='user' placeholder='Username' />
 		<input type='password' id='password' name='password' placeholder='Password' />
+		$stay
 	</div>
 	<div id='lfooter'>
 		<button id='login' name='login' value='login'>Login</button>
@@ -398,10 +402,108 @@ function loginForm() {
 	return $form;
 }
 
+function unique_code($limit) {
+	return substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, $limit);
+}
+
+function db_query($query) {
+	global $database;
+	e_log(9,$query);
+
+	$options = [
+		PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+		PDO::ATTR_CASE => PDO::CASE_NATURAL,
+		PDO::ATTR_ORACLE_NULLS => PDO::NULL_EMPTY_STRING
+	];
+
+	try {
+		$db = new PDO('sqlite:'.$database, null, null, $options);
+	} catch (PDOException $e) {
+		e_log(1,'DB connection failed: '.$e->getMessage());
+		return false;
+	}
+
+	if(strpos($query, 'SELECT') === 0 || strpos($query, 'PRAGMA') === 0) {
+		try {
+			$statement = $db->prepare($query);
+			$statement->execute();
+		} catch(PDOException $e) {
+			e_log(1,"DB query failed: ".$e->getMessage());
+			return false;
+		}
+		$queryData = $statement->fetchAll(PDO::FETCH_ASSOC);
+	} else {
+		try {
+			$queryData = $db->exec($query);
+			if(strpos($query, 'INSERT') === 0) $queryData = $db->lastInsertId();
+		} catch(PDOException $e) {
+			e_log(1,"DB update failed: ".$e->getMessage());
+			return false;
+		}
+	}
+
+	$db = NULL;
+	return $queryData;
+}
+
+function clearAuthCookie() {
+	e_log(8,'Reset Cookie');
+	if(isset($_COOKIE['rmpnotes'])) {
+		$cookieArr = json_decode($_COOKIE['rmpnotes'], true);
+		$query = "DELETE FROM `auth_token` WHERE `user` = '".$cookieArr['mail']."' AND `client` = '".$cookieArr['token']."'";
+		db_query($query);
+		
+		$cOptions = array (
+			'expires' => 0,
+			'path' => null,
+			'domain' => null,
+			'secure' => true,
+			'httponly' => true,
+			'samesite' => 'Strict'
+		);
+		
+		setcookie("rmpnotes", "", $cOptions);
+	}
+}
+
 function imapLogin($mailbox) {
 	global $title, $realm;
 
 	$success = false;
+	if(!isset($_SESSION['iauth']) && isset($_COOKIE['rmpnotes']))	{
+		e_log(8,"Cookie found. Try to login...");
+		$cookieArr = json_decode($_COOKIE['rmpnotes'], true);
+		$query = "SELECT * FROM `auth_token` WHERE `user` = '".$cookieArr['mail']."' ORDER BY `exDate` DESC;";
+		$tkdata = db_query($query);
+
+		foreach($tkdata as $key => $token) {
+			e_log(8, $cookieArr['key']);
+			if(password_verify($cookieArr['key'], $token['tHash'])) {
+				$_SESSION['iauth'] = $cookieArr['mail'];
+				$success = true;
+				$expireTime = time() + (86400 * 7);
+				$cOptions = array (
+					'expires' => $expireTime,
+					'path' => null,
+					'domain' => null,
+					'secure' => true,
+					'httponly' => true,
+					'samesite' => 'Strict'
+				);
+				$rtoken = unique_code(32);
+				$dtoken = $cookieArr['key'];
+				setcookie('rmpnotes', json_encode(array('mail' => $cookieArr['mail'], 'key' => $rtoken, 'token' => $dtoken)), $cOptions);
+				$rtoken = password_hash($rtoken, PASSWORD_DEFAULT);
+				$query = "UPDATE `auth_token` SET `tHash` = '$rtoken', `exDate` = '$expireTime' WHERE `token` = ".$token['token'].";";
+				$erg = db_query($query);
+				return $success;
+				break;
+			}
+		}
+
+		
+	}
+
 	if(!isset($_SESSION['iauth']) && !isset($_POST['login'])) {
 		e_log(8,"Not authorized, show login...");
 		echo getHeader();
@@ -410,6 +512,28 @@ function imapLogin($mailbox) {
 	} else {
 		$username = isset($_POST['user']) ? filter_var($_POST['user'], FILTER_SANITIZE_STRING):$_SERVER['PHP_AUTH_USER'];
 		$password = isset($_POST['password']) ? filter_var($_POST['password'], FILTER_SANITIZE_STRING):$_SERVER['PHP_AUTH_PW'];
+
+		if(isset($_POST['remember']) && filter_var($_POST['remember'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)) {
+			e_log(8, "cookie set");
+			$expireTime = time() + (86400 * 7);
+			$cOptions = array (
+				'expires' => $expireTime,
+				'path' => null,
+				'domain' => null,
+				'secure' => true,
+				'httponly' => true,
+				'samesite' => 'Strict'
+			);
+
+			$rtoken = unique_code(32);
+			$dtoken = bin2hex(openssl_random_pseudo_bytes(16));
+
+			setcookie('rmpnotes', json_encode(array('mail' => $username, 'key' => $rtoken, 'token' => $dtoken)), $cOptions);
+			$rtoken = password_hash($rtoken, PASSWORD_DEFAULT);
+
+			$query = "INSERT INTO `auth_token` (`user`,`client`, `tHash`,`exDate`) VALUES ('$username', '$dtoken', '$rtoken', '$expireTime');";
+			$erg = db_query($query);
+		}
 		
 		e_log(8,"$username not authorized, try to login...");
 		
