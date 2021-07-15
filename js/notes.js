@@ -695,8 +695,6 @@ function uploadFile(file, alt='', title='') {
 function pasteParse(event) {
 	event.preventDefault();
 	event.stopPropagation();
-
-    addLoader();
 	
 	const pastedString = event.clipboardData.getData('text/html') || event.clipboardData.getData('text/plain');
 
@@ -716,7 +714,7 @@ function pasteParse(event) {
 				var title = imageT.substr(titleS, titleE - titleS);
 			} else var title = '';
 
-			removeLoader();
+			addLoader();
 			uploadFile(item.getAsFile(), alt, title);
 			return false;
 		}
@@ -731,10 +729,12 @@ function pasteParse(event) {
 			} else {
 				console.error("Error! Upload failed");
 			}
+			removeLoader();
 		};
 	
 		xhr.onerror = function() {
 			console.error("Error! Upload failed. Can not connect to server.");
+			removeLoader();
 		};
 	
 		var formData = new FormData();

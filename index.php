@@ -224,6 +224,7 @@ function getHeader() {
 			
 			<script src='js/notes.min.js' type='text/javascript' charset='utf-8'></script>
 			<link href='css/notes.min.css' rel='stylesheet' />
+			<link href='css/easymde.min.css' rel='stylesheet' />
 		</head>
 		<body>";
 	
