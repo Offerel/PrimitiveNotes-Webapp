@@ -126,32 +126,27 @@ button.LogoutB {
 }
 @-webkit-keyframes spin {
     from {
-       /* -webkit-transform: rotate(0deg); */
         transform: rotate(0deg);
     } to {
-/*        -webkit-transform: rotate(360deg); */
         transform: rotate(360deg);
     }
 }
 @keyframes spin {
     from {
-/*        -webkit-transform: rotate(0deg); */
         transform: rotate(0deg);
     } to {
-/*        -webkit-transform: rotate(360deg); */
         transform: rotate(360deg);
     }
 }
 #tocButton {
 	position: absolute;
-	z-index: 100;
+	z-index: 1;
 	top: 15px;
 	right: 10px;
 	background-color: #f4f4f4;
 	border: 1px solid #ced4da;
 	border-radius: 5px;
 	cursor: pointer;
-	/* font-size: .8em; */
 	padding: 3px;
 	outline: 0;
 }
@@ -245,11 +240,11 @@ button.LogoutB {
 #noteheader {
 	background: #efefef;
 	width: 100%;
-	height: 85px;
+	height: 90px;
 }
 #notebody {
 	width: 100%;
-	height: calc(100% - 100px);
+	height: calc(100% - 90px);
 	background: white;
 }
 #main {
@@ -292,7 +287,7 @@ button.LogoutB {
 	box-shadow: 0 3px 5px 0 rgba(0,0,0,.75);
 	border-bottom-left-radius: 5px;
 	border-bottom-right-radius: 5px;
-	top: 55px;
+	top: 45px;
 }
 #ndata div {
 	width: 25%;
