@@ -230,6 +230,13 @@ document.addEventListener("DOMContentLoaded", function() {
 						action: 'https://www.markdownguide.org/basic-syntax/',
 						noDisable: true
 					}, 
+					{
+						name: 'Download',
+						className: 'ma ma-download',
+						title: 'Download Note',
+						action: downloadNote,
+						noDisable: true
+					},
 					{ 
 						name: 'Meta',
 						className: 'ma ma-meta',
@@ -264,6 +271,28 @@ document.addEventListener("DOMContentLoaded", function() {
 		tagify.settings.whitelist = document.getElementById('allTags').value.split(',');
 	}
 }, false);
+
+function downloadNote() {
+	let notename = document.getElementById('fname').value;
+	let data = 'action=dlNote&note='+notename;
+	let xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function () {
+		if(this.readyState == 4 && this.status == 200) {
+			let blob = new Blob([xhr.response], {type: xhr.getResponseHeader("content-type")});
+			let a = document.createElement("a");
+			a.style = "display: none";
+			document.body.appendChild(a);
+			let url = window.URL.createObjectURL(blob);
+			a.href = url;
+			a.download = notename;
+			a.click();
+			window.URL.revokeObjectURL(url);
+		}
+	}
+	xhr.open("POST", document.location.pathname, true);
+	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+	xhr.send(data);
+}
 
 function barwidth() {
 	let dWidth = document.getElementById('left').offsetWidth - 1;
@@ -428,6 +457,9 @@ function togglemData() {
 
 function showNote() {
     addLoader();
+    document.querySelectorAll('#nlist li').forEach(function(e){
+    	e.classList.remove('nloaded');
+    });
 	let fname = this.dataset.na;
 	let data = 'action=vNote&note='+fname+'&type='+this.children[0].title;
 	let xhr = new XMLHttpRequest();
@@ -446,7 +478,7 @@ function showNote() {
 
 				nbody = response[2].trim();
 				document.getElementById('fname').value = fname;
-				document.getElementById('ntitle').value = yobj['title'];
+				document.getElementById('ntitle').value = (yobj['title']) ? yobj['title']:fname.split('.')[0];
 				let tstr = (yobj['tags']) ? yobj['tags']:'';
 				document.getElementById('ntags').value = tstr;
 				document.getElementById('author').value = (yobj['author']) ? yobj['author']:'';
@@ -455,6 +487,7 @@ function showNote() {
 				document.getElementById('source').value = (yobj['source']) ? yobj['source']:'';
 				tagify.removeAllTags();
 				tagify.addTags(tstr.split(' '));
+				document.querySelector("[data-na='"+fname+"']").classList.toggle('nloaded');
 			} else {
 				nbody = response[0].trim();
 				document.getElementById('fname').value = fname;
@@ -580,6 +613,8 @@ function uplInsertImage() {
 
 function switchButtons(mode) {
 	let toolbarButtons = document.querySelectorAll('#notebody .editor-toolbar button');
+
+	document.querySelector('.ma-download').disabled = (document.getElementById('fname').value !== '') ? false:true;
 	
 	toolbarButtons.forEach(function(button, key){
 		if(mode == 'view') {
@@ -595,7 +630,6 @@ function switchButtons(mode) {
 }
 
 function newNote() {
-	console.log("new note");
 	if(document.getElementById('tocButton')) document.getElementById("tocButton").remove();
 	document.getElementById('fname').value = '';
 	document.getElementById('ntitle').value = '';

@@ -68,6 +68,12 @@ if(isset($_POST['action'])) {
 			$file = $notes_path.filter_var($_POST['note'], FILTER_SANITIZE_STRING);
 			die(json_encode(delNote($file)));
 			break;
+		case 'dlNote':
+			e_log(8,"download");
+			$file = $notes_path.filter_var($_POST['note'], FILTER_SANITIZE_STRING);
+			downloadNote($file);
+			die();
+			break;
 		case 'dMedia':
 			$media = json_decode($_POST['media']);
 			foreach($media as $key => $file) {
@@ -200,6 +206,19 @@ function delNote($file) {
 	return $mArr;
 }
 
+function downloadNote($file){
+	e_log(8,$file);
+	$fc = file_get_contents($file);
+	$hash = sha1($file);
+	$mime = mime_content_type($file);
+	header("Content-Description: File Transfer");
+	header('Content-Disposition: attachment; filename='.basename($file));
+	header('Content-type: '.$mime);
+	header('Content-Transfer-Encoding: binary');
+	header('Content-Length: '.strlen($fc));
+	readfile($file);
+}
+
 function getHeader() {
 	global $title;
     $header = "<!DOCTYPE html>
@@ -241,7 +260,6 @@ function createNotelist($notes) {
 	$nlist = '';
 	foreach ($notes[1] as $key => $note) {
         $nlist.="<li data-tags='".$note['tags']."' data-na='".$note['fname']."' title='".$note['name']."'>
-            <!-- <div class='ntype' title='".$note['type']."'>".$note['type']."</div> -->
     		<div class='mpart'>
     			<div class='nname'>".$note['name']."</div>
     			<div class='ntime'>".date("d.m.Y H:i",$note['time'])."</div>
@@ -256,7 +274,7 @@ function prepareLayout($notes_path) {
 	$layout = "<div id='parent'>
 	<div id='left'>
 		<div id='search'>
-			<input id='nsearch' type='text'>
+			<input id='nsearch' type='text' placeholder='Search&#8230;'>
 		</div>
 	<ul id='nlist'>";
 	e_log(8,"Read directory '$notes_path' for notes");
@@ -314,16 +332,17 @@ function saveNote($note, $path) {
 function getNotes($notes_path) {
 	e_log(8,"Get list of notes from '$notes_path'");
 
-	global $tagArray;
+	global $tagArray, $extensions;
 	$notes = array();
 	$id = 0;
+	$extArr = array_map('trim', explode(',', $extensions));
 	
 	if(is_dir($notes_path)) {
 		if($ndir = opendir($notes_path)) {
 			while(false !== ($file = readdir($ndir))) {
 				$fpath = $notes_path.$file;
 				
-				if ($file != "." && $file != ".." && substr($file, 0, 1) != '.' && pathinfo($fpath, PATHINFO_EXTENSION) === 'md') {
+				if ($file != "." && $file != ".." && substr($file, 0, 1) != '.' && in_array(pathinfo($fpath, PATHINFO_EXTENSION), $extArr, true)) {
 					if(is_file($fpath)) {
 						$bname = pathinfo($fpath,PATHINFO_BASENAME);
 						$nstr = (pathinfo($fpath,PATHINFO_EXTENSION) === 'md') ? getNotTags($fpath):'';

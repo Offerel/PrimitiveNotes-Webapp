@@ -32,7 +32,7 @@ if (file_exists($bg_file)) {
 		if($_SERVER['HTTP_IF_NONE_MATCH'] == $hash) {
 			header('HTTP/1.1 304 Not Modified');
 			exit();
-        }
+		}
 	}
 	
 	echo $cacheContent;
