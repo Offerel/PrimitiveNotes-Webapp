@@ -3,4 +3,4 @@ This is a standalone version of PrimitiveNotes for Roundcube for using the notes
 
 # [Changelog](https://github.com/Offerel/PrimitiveNotes-Webapp/blob/master/CHANGELOG.md)
 
-# [Installation](../../wiki/Installation)
+# [Installation](https://github.com/Offerel/PrimitiveNotes-Webapp/wiki/Installation)
