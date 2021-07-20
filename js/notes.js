@@ -430,7 +430,7 @@ function deleteNote(note) {
 
 function tpreview() {
 	if(document.getElementById('tocButton')) document.getElementById("tocButton").remove();
-	
+
 	if(mde.isPreviewActive()) {
 		document.getElementById('ntitle').disabled = false;
 		document.getElementById('author').readOnly = false;
@@ -447,7 +447,7 @@ function tpreview() {
 		document.querySelector('#noteheader .tagify').classList.remove('tedit');
 		getTOC();
 	}
-	
+
 	mde.togglePreview();
 }
 
@@ -457,9 +457,9 @@ function togglemData() {
 
 function showNote() {
     addLoader();
-    document.querySelectorAll('#nlist li').forEach(function(e){
-    	e.classList.remove('nloaded');
-    });
+	document.querySelectorAll('#nlist li').forEach(function(e){
+		e.classList.remove('nloaded');
+	});
 	let fname = this.dataset.na;
 	let data = 'action=vNote&note='+fname+'&type='+this.children[0].title;
 	let xhr = new XMLHttpRequest();
@@ -527,7 +527,7 @@ function showNote() {
 
 function getTOC() {
 	if(document.getElementById('tocButton')) document.getElementById("tocButton").remove();
-	
+
     let headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
     if(headings.length > 0) {
 		let tocButton = document.createElement('button');
