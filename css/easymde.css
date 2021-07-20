@@ -117,11 +117,13 @@
 	max-width: 100%;
 }
 .editor-preview a, .editor-preview-side a {
-	color: #42b983;
+	color: forestgreen;
 	text-decoration: none;
 	font-style: normal;
 	font-size: 15px;
-	font-weight: 600;
+}
+.editor-preview a:hover, .editor-preview-side a:hover {
+	text-decoration: underline;
 }
 .editor-preview pre, .editor-preview-side pre {
 	background: #f8f8f8;
