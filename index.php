@@ -2,7 +2,7 @@
 /**
  * Notes
  *
- * @version 1.0.0
+ * @version 1.0.1
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -277,7 +277,6 @@ function prepareLayout($notes_path) {
 			<input id='nsearch' type='text' placeholder='Search&#8230;'>
 		</div>
 	<ul id='nlist'>";
-	e_log(8,"Read directory '$notes_path' for notes");
 	$notes = getNotes($notes_path);
 	$nlist = createNotelist($notes);
 	$layout2 = "</ul></div>
@@ -497,7 +496,6 @@ function imapLogin($mailbox) {
 		$tkdata = db_query($query);
 
 		foreach($tkdata as $key => $token) {
-			e_log(8, $cookieArr['key']);
 			if(password_verify($cookieArr['key'], $token['tHash'])) {
 				$_SESSION['iauth'] = $cookieArr['mail'];
 				$success = true;

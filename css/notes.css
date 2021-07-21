@@ -245,7 +245,7 @@ button.LogoutB {
 }
 #noteheader {
 	background: #efefef;
-	width: 100%;
+	width: calc(100% - 9px);
 	height: 90px;
 }
 #notebody {
@@ -257,6 +257,7 @@ button.LogoutB {
 	display: flex;
 	flex-direction: column;
 	flex: 1;
+	background-color: #efefef;
 }
 #noteslist {
 	overflow: auto;
