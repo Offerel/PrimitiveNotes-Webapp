@@ -5,7 +5,7 @@ body {
 	font-size: 0.85em;
 }
 .login {
-	background: url(../background.php) no-repeat center center fixed;
+	background: url(../?bg=1) no-repeat center center fixed;
 	background-size: cover;
 	height: 100%;
 }
@@ -138,6 +138,10 @@ button.LogoutB {
         transform: rotate(360deg);
     }
 }
+li.task-list-item {
+	list-style: none;
+	margin-left: -1.5em;
+}
 #tocButton {
 	position: absolute;
 	z-index: 1;
@@ -158,14 +162,14 @@ button.LogoutB {
 	width: 300px;
 	white-space: nowrap;
 	padding: 10px 0;
-	box-shadow: 1px 3px 3px 0 rgba(50,50,50,.3);
+	box-shadow: 0px 3px 3px 1px rgba(50,50,50,.3);
 	border-bottom-left-radius: 5px;
 	border-bottom-right-radius: 5px;
-	border: 1px solid #bbb;
+	border-left: 1px solid #bbb;
 	border-top: 0;
 	overflow: auto;
-	max-height: calc(100% - 140px);
-	right: -310px;
+	max-height: calc(100% - 210px);
+	right: -320px;
 }
 #tocDIV ul {
 	margin: 0;
@@ -450,4 +454,8 @@ button.LogoutB {
 }
 .editor-statusbar {
 	background: #efefef;
+}
+.editor-preview pre code {
+	font-weight: 600;
+	font-size: 1em;
 }

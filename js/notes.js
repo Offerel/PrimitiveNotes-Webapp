@@ -1,7 +1,7 @@
 /**
  * Notes
  *
- * @version 1.0.1
+ * @version 1.0.2
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -90,11 +90,15 @@ document.addEventListener("DOMContentLoaded", function() {
 		indentWithTabs: true,
 		sideBySideFullscreen: false,
 		autoDownloadFontAwesome: false,
+		placeholder: "Add your note here...",
 		renderingConfig: {
+			markedOptions: {
+				sanitize: false,
+        	},
 			codeSyntaxHighlighting: true,
 			sanitizerFunction: function(renderedHTML) {
 				return renderedHTML.replaceAll(cval.mf, document.location.pathname+'?nimg=');
-			},
+			}
 		},
 		shortcuts: {
 			Preview: "Cmd-P",
@@ -426,11 +430,12 @@ function deleteNote(note) {
 		xhr.open("POST", document.location.pathname, true);
 		xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 		xhr.send(data);
-	} //deleteNote(this.dataset.na);
+	}
 }
 
 function tpreview() {
 	if(document.getElementById('tocButton')) document.getElementById("tocButton").remove();
+	if(document.getElementById('tocDIV')) document.getElementById("tocDIV").remove();
 
 	if(mde.isPreviewActive()) {
 		document.getElementById('ntitle').disabled = false;
@@ -528,6 +533,7 @@ function showNote() {
 
 function getTOC() {
 	if(document.getElementById('tocButton')) document.getElementById("tocButton").remove();
+	if(document.getElementById('tocDIV')) document.getElementById("tocDIV").remove();
 
     let headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
     if(headings.length > 0) {

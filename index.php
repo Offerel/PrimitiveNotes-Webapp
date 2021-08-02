@@ -2,7 +2,7 @@
 /**
  * Notes
  *
- * @version 1.0.1
+ * @version 1.0.2
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -10,6 +10,35 @@
 session_start();
 include_once "config.inc.php.dist";
 include_once "config.inc.php";
+
+if(isset($_GET['bg'])) {
+	$files = array();
+	$backgroundsDir = dirname(__FILE__).'/images/';
+	if($handle = @opendir($backgroundsDir)) {
+		while($file = readdir($handle)) {
+			if($file != '.' AND $file != '..' AND mime_content_type($backgroundsDir.$file) == 'image/jpeg') {
+				$files[] = $file;
+			}
+		}
+	}
+	$bg_file = $backgroundsDir.$files[array_rand($files)];
+	$cacheContent = file_get_contents($bg_file);
+	$hash = sha1($bg_file);
+	header('Content-Disposition: inline;filename='.basename($bg_file));
+	header('Content-type: image/jpeg');
+	header("ETag: $hash");
+	header("Last-Modified: ".gmdate('D, d M Y H:i:s T', filemtime($bg_file)));
+	header('Content-Length: '.strlen($cacheContent));
+	
+	if(isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+		if($_SERVER['HTTP_IF_NONE_MATCH'] == $hash) {
+			header('HTTP/1.1 304 Not Modified');
+			exit();
+		}
+	}
+	echo $cacheContent;
+	die();
+}
 
 if((strlen($mailbox) > 0) && (!isset($_SESSION['iauth']))) {
 	if(!imapLogin($mailbox)) {
@@ -468,7 +497,7 @@ function db_query($query) {
 function clearAuthCookie() {
 	e_log(8,'Reset Cookie');
 	if(isset($_COOKIE['rmpnotes'])) {
-		$cookieArr = json_decode($_COOKIE['rmpnotes'], true);
+		$cookieArr = json_decode(cryptCookie($_COOKIE['rmpnotes'], 2), true);
 		$query = "DELETE FROM `auth_token` WHERE `user` = '".$cookieArr['mail']."' AND `client` = '".$cookieArr['token']."'";
 		db_query($query);
 		
@@ -491,7 +520,7 @@ function imapLogin($mailbox) {
 	$success = false;
 	if(!isset($_SESSION['iauth']) && isset($_COOKIE['rmpnotes']))	{
 		e_log(8,"Cookie found. Try to login...");
-		$cookieArr = json_decode($_COOKIE['rmpnotes'], true);
+		$cookieArr = json_decode(cryptCookie($_COOKIE['rmpnotes'], 2), true);
 		$query = "SELECT * FROM `auth_token` WHERE `user` = '".$cookieArr['mail']."' ORDER BY `exDate` DESC;";
 		$tkdata = db_query($query);
 
@@ -510,7 +539,8 @@ function imapLogin($mailbox) {
 				);
 				$rtoken = unique_code(32);
 				$dtoken = $cookieArr['key'];
-				setcookie('rmpnotes', json_encode(array('mail' => $cookieArr['mail'], 'key' => $rtoken, 'token' => $dtoken)), $cOptions);
+				$cookieData = cryptCookie(json_encode(array('key' => $rtoken, 'mail' => $cookieArr['mail'], 'token' => $dtoken)), 1);
+				setcookie('rmpnotes', $cookieData, $cOptions);
 				$rtoken = password_hash($rtoken, PASSWORD_DEFAULT);
 				$query = "UPDATE `auth_token` SET `tHash` = '$rtoken', `exDate` = '$expireTime' WHERE `token` = ".$token['token'].";";
 				$erg = db_query($query);
@@ -546,7 +576,8 @@ function imapLogin($mailbox) {
 			$rtoken = unique_code(32);
 			$dtoken = bin2hex(openssl_random_pseudo_bytes(16));
 
-			setcookie('rmpnotes', json_encode(array('mail' => $username, 'key' => $rtoken, 'token' => $dtoken)), $cOptions);
+			$cookieData = cryptCookie(json_encode(array('key' => $rtoken, 'mail' => $username, 'token' => $dtoken)), 1);
+			setcookie('rmpnotes', $cookieData, $cOptions);
 			$rtoken = password_hash($rtoken, PASSWORD_DEFAULT);
 
 			$query = "INSERT INTO `auth_token` (`user`,`client`, `tHash`,`exDate`) VALUES ('$username', '$dtoken', '$rtoken', '$expireTime');";
@@ -602,6 +633,16 @@ function sCookie($title, $media_folder) {
 		'barw'	=> $barw,
 	);
 	setcookie("primitivenotes", json_encode($cArr), $cOptions);
+}
+
+function cryptCookie($data, $crypt) {
+	global $enckey, $enchash;
+	$method = 'aes-256-cbc';
+	$iv = substr(hash('sha256', $enchash), 0, 16);
+	$opts   = defined('OPENSSL_RAW_DATA') ? OPENSSL_RAW_DATA : true;
+	$key = hash('sha256', $enckey);
+	$str = ($crypt == 1) ? base64_encode(openssl_encrypt($data, $method, $key, $opts, $iv)):openssl_decrypt(base64_decode($data), $method, $key, $opts, $iv);
+	return $str;
 }
 
 echo getHeader();
