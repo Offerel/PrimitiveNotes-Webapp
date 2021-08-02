@@ -1,7 +1,7 @@
 /**
  * Notes
  *
- * @version 1.0.0
+ * @version 1.0.2
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -90,11 +90,15 @@ document.addEventListener("DOMContentLoaded", function() {
 		indentWithTabs: true,
 		sideBySideFullscreen: false,
 		autoDownloadFontAwesome: false,
+		placeholder: "Add your note here...",
 		renderingConfig: {
+			markedOptions: {
+				sanitize: false,
+        	},
 			codeSyntaxHighlighting: true,
 			sanitizerFunction: function(renderedHTML) {
 				return renderedHTML.replaceAll(cval.mf, document.location.pathname+'?nimg=');
-			},
+			}
 		},
 		shortcuts: {
 			Preview: "Cmd-P",
@@ -384,53 +388,55 @@ function removeLoader() {
 function deleteNote(note) {
 	let notename = (typeof note === 'object') ? document.getElementById('fname').value:note;
 	let rload = (typeof note === 'object') ? true:false;
-	
-	if(notename.length < 1) {
-		console.warn('No note to delete...');
-		return;
-	}
-	
-	addLoader();
-	let data = 'action=dNote&note='+notename;
-	let xhr = new XMLHttpRequest();
-	xhr.onreadystatechange = function () {
-		if(this.readyState == 4 && this.status == 200) {
-			let response = JSON.parse(xhr.responseText);
-			if(response.erg == 1) {
-				removeLoader()
-				console.info(response.message);
-				if(response.data.length > 0) {
-					if(confirm(response.message)) {
-						let datad = 'action=dMedia&media='+encodeURIComponent(JSON.stringify(response.data));
-						let xhrd = new XMLHttpRequest();
-						xhrd.onreadystatechange = function () {
-							if(this.readyState == 4 && this.status == 200) {
-								let response = JSON.parse(xhr.responseText);
-								alert(response);
-							}
-						}
-						xhrd.open("POST", document.location.pathname, true);
-						xhrd.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-						xhrd.send(datad);
-					}
-					(rload) ? window.location.href = document.location.pathname:loadList();
-				}
-			} else {
-				console.warn(response.message);
-				removeLoader();
-			}
-			
-			(rload) ? window.location.href = document.location.pathname:loadList();
+
+	if(confirm("Do you want to delete '"+notename+"'?")) {
+		if(notename.length < 1) {
+			console.warn('No note to delete...');
+			return;
 		}
+		addLoader();
+		let data = 'action=dNote&note='+notename;
+		let xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = function () {
+			if(this.readyState == 4 && this.status == 200) {
+				let response = JSON.parse(xhr.responseText);
+				if(response.erg == 1) {
+					removeLoader()
+					console.info(response.message);
+					if(response.data.length > 0) {
+						if(confirm(response.message)) {
+							let datad = 'action=dMedia&media='+encodeURIComponent(JSON.stringify(response.data));
+							let xhrd = new XMLHttpRequest();
+							xhrd.onreadystatechange = function () {
+								if(this.readyState == 4 && this.status == 200) {
+									let response = JSON.parse(xhr.responseText);
+									alert(response);
+								}
+							}
+							xhrd.open("POST", document.location.pathname, true);
+							xhrd.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+							xhrd.send(datad);
+						}
+						(rload) ? window.location.href = document.location.pathname:loadList();
+					}
+				} else {
+					console.warn(response.message);
+					removeLoader();
+				}
+				
+				(rload) ? window.location.href = document.location.pathname:loadList();
+			}
+		}
+		xhr.open("POST", document.location.pathname, true);
+		xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+		xhr.send(data);
 	}
-	xhr.open("POST", document.location.pathname, true);
-	xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-	xhr.send(data);
 }
 
 function tpreview() {
 	if(document.getElementById('tocButton')) document.getElementById("tocButton").remove();
-	
+	if(document.getElementById('tocDIV')) document.getElementById("tocDIV").remove();
+
 	if(mde.isPreviewActive()) {
 		document.getElementById('ntitle').disabled = false;
 		document.getElementById('author').readOnly = false;
@@ -447,7 +453,7 @@ function tpreview() {
 		document.querySelector('#noteheader .tagify').classList.remove('tedit');
 		getTOC();
 	}
-	
+
 	mde.togglePreview();
 }
 
@@ -457,9 +463,9 @@ function togglemData() {
 
 function showNote() {
     addLoader();
-    document.querySelectorAll('#nlist li').forEach(function(e){
-    	e.classList.remove('nloaded');
-    });
+	document.querySelectorAll('#nlist li').forEach(function(e){
+		e.classList.remove('nloaded');
+	});
 	let fname = this.dataset.na;
 	let data = 'action=vNote&note='+fname+'&type='+this.children[0].title;
 	let xhr = new XMLHttpRequest();
@@ -527,7 +533,8 @@ function showNote() {
 
 function getTOC() {
 	if(document.getElementById('tocButton')) document.getElementById("tocButton").remove();
-	
+	if(document.getElementById('tocDIV')) document.getElementById("tocDIV").remove();
+
     let headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
     if(headings.length > 0) {
 		let tocButton = document.createElement('button');
@@ -852,7 +859,7 @@ function pasteParse(event) {
 
 function onContextMenu(e){
 	e.preventDefault();
-	if(confirm("Do you want to delete '"+this.title+"'?")) deleteNote(this.dataset.na);
+	deleteNote(this.dataset.na);
 }
 
 function logOut() {

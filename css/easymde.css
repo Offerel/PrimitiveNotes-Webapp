@@ -1,4 +1,18 @@
 /* --- Toolbar --- */
+.editor-toolbar .easymde-dropdown:hover {
+    border-color: #95a5a6 !important;
+    background-color: #fcfcfc;
+}
+.editor-toolbar .easymde-dropdown::before {
+    content: " ";
+    display: block;
+    background: linear-gradient(to bottom right,transparent 0,transparent 84%,#333 50%,#333 100%);
+    width: 22px;
+    height: 22px;
+    position: absolute;
+    top: 0px;
+    right: -2px;
+}
 .editor-toolbar i.separator {
 	position: relative;
 	top: 5px;

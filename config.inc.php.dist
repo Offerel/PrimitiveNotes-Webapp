@@ -9,4 +9,6 @@ $loglevel = 9;                                  // loglevel; 9=debug; 8=notice; 
 $lang = 'en';									// set the locale for dates and other values
 $mailbox = '{imap.server.com:993/imap/ssl}';	// IMAP connection string, see https://www.php.net/manual/en/function.imap-open.php for possible values; set to null or empty for not authentication or using .htaccess
 $database = '/mnt/path/to/notes.db';			// path to database, leave empty or set to null, if you dont need 'stay logged in' feature
+$enckey = '3Z8V1TxkyNIwYc2v';					// random key for encryption
+$enchash = 'DACl6JbhwZs3XEgH';					// random hash for encryption
 ?>
