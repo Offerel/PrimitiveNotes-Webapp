@@ -428,6 +428,11 @@ li.task-list-item {
 }
 .editor-toolbar button {
 	outline: 0;
+	margin: 0 5px;
+}
+.easymde-dropdown-content {
+	top: 28px;
+	background-color: #efefef;
 }
 .editor-toolbar button:disabled {
 	pointer-events: none;

@@ -444,6 +444,7 @@ function tpreview() {
 		switchButtons('edit');
 		tagify.setReadonly(false);
 		document.querySelector('#noteheader .tagify').classList.add('tedit');
+		document.querySelector('.Preview').classList.add('pview');
 	} else {
 		document.getElementById('ntitle').disabled = true;
 		document.getElementById('author').readOnly = true;
@@ -451,6 +452,7 @@ function tpreview() {
 		switchButtons('view');
 		tagify.setReadonly(true);
 		document.querySelector('#noteheader .tagify').classList.remove('tedit');
+		document.querySelector('.Preview').classList.remove('pview');
 		getTOC();
 	}
 
