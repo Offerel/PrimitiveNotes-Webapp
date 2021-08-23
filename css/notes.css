@@ -4,6 +4,32 @@ body {
 	font-family: "Lucida Grande",Verdana,Arial,Helvetica,sans-serif;
 	font-size: 0.85em;
 }
+#dcMenu {
+	position: absolute;
+	z-index: 100;
+	top: 0;
+	background-color: #fff;
+	display: none;
+	box-shadow: 1px 3px 3px 0 rgba(50,50,50,.4);
+	border-radius: 5px;
+	border: 1px solid ghostwhite;
+}
+#cMenu {
+	margin: 0;
+	padding: 0;
+}
+#cMenu li {
+	list-style: none;
+	padding: 3px 10px 3px 30px;
+	background-repeat: no-repeat;
+	background-size: 1.2em;
+	background-position-x: 5px;
+	background-position-y: 4px;
+	cursor: context-menu;
+}
+#cMenu li:hover {
+	background-color: gainsboro;
+}
 .login {
 	background: url(../?bg=1) no-repeat center center fixed;
 	background-size: cover;
@@ -446,6 +472,7 @@ li.task-list-item {
 	background-color: #efefef;
 	box-shadow: 1px 3px 3px 0 rgba(50,50,50,.4);
 	z-index: 10;
+	white-space: nowrap;
 }
 .EasyMDEContainer .CodeMirror {
 	border: 0;

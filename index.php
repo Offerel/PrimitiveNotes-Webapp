@@ -2,7 +2,7 @@
 /**
  * Notes
  *
- * @version 1.0.2
+ * @version 1.0.3
  * @author Offerel
  * @copyright Copyright (c) 2021, Offerel
  * @license GNU General Public License, version 3
@@ -98,9 +98,15 @@ if(isset($_POST['action'])) {
 			die(json_encode(delNote($file)));
 			break;
 		case 'dlNote':
-			e_log(8,"download");
+			e_log(8,"Download Note");
 			$file = $notes_path.filter_var($_POST['note'], FILTER_SANITIZE_STRING);
 			downloadNote($file);
+			die();
+			break;
+		case 'dlMedia':
+			e_log(8,"Download Media");
+			$file = $notes_path.$media_folder.filter_var($_POST['media'], FILTER_SANITIZE_STRING);
+			downloadMedia($file);
 			die();
 			break;
 		case 'dMedia':
@@ -248,6 +254,25 @@ function downloadNote($file){
 	readfile($file);
 }
 
+function downloadMedia($file){
+	if(file_exists($file)) {
+		$mime = mime_content_type($file);
+		header('Content-Description: File Transfer');
+		header('Content-Type: application/octet-stream');
+		header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+		header("Expires: 0");
+		header('Content-Disposition: attachment; filename='.basename($file));
+		header('Content-Length: '.filesize($file));
+		header('Content-type: '.$mime);
+		header('Pragma: public');
+		header('Content-Transfer-Encoding: binary');
+		readfile($file);
+		exit;
+	}
+	e_log(2,"File $file don't exist");
+	die();
+}
+
 function getHeader() {
 	global $title;
     $header = "<!DOCTYPE html>
@@ -270,7 +295,7 @@ function getHeader() {
 			
 			<script src='js/turndown/turndown.js'></script>
 			
-			<script src='js/notes.min.js' type='text/javascript' charset='utf-8'></script>
+			<script src='js/notes.js' type='text/javascript' charset='utf-8'></script>
 			<link href='css/notes.min.css' rel='stylesheet' />
 			<link href='css/easymde.min.css' rel='stylesheet' />
 		</head>
@@ -280,7 +305,8 @@ function getHeader() {
 }
 
 function getFooter() {
-	$footer = "	</body>
+	$cMenu = "<div id='dcMenu'></div>";
+	$footer = $cMenu."	</body>
 	</html>";
 	return $footer;
 }
