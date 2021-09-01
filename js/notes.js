@@ -583,7 +583,7 @@ function showNOTE(nname) {
 	let xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function () {
 		if (this.readyState == 4 && this.status == 200) {
-			let response = xhr.responseText.split('---');
+			let response = xhr.responseText.split(/---\r?\n/g);
 			removeLoader();
 			var yobj = {};
 			var nbody;
