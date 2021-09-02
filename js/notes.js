@@ -583,7 +583,7 @@ function showNOTE(nname) {
 	let xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = function () {
 		if (this.readyState == 4 && this.status == 200) {
-			let response = xhr.responseText.split(/---\r?\n/g);
+			let response = xhr.responseText.split(/---[\r?\n]/g);
 			removeLoader();
 			var yobj = {};
 			var nbody;
@@ -1011,7 +1011,7 @@ function showIMG() {
 };
 
 function editIMG() {
-	console.log('Not implemented');
+	console.warn('Function currently not implemented');
 };
 
 function logOut() {
