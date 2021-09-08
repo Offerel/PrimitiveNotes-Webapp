@@ -290,10 +290,10 @@ function getHeader() {
 			<link href='js/easymde/easymde.min.css' rel='stylesheet'>
 			<script src='js/easymde/easymde.min.js'></script>
 			
-			<link href='js/tagify/tagify.min.css' rel='stylesheet' type='text/css' />
+			<link href='js/tagify/tagify.css' rel='stylesheet' type='text/css' />
 			<script src='js/tagify/tagify.min.js' type='text/javascript' charset='utf-8'></script>
 			
-			<script src='js/turndown/turndown.js'></script>
+			<script src='js/turndown/turndown.min.js'></script>
 			
 			<script src='js/notes.min.js' type='text/javascript' charset='utf-8'></script>
 			<link href='css/notes.min.css' rel='stylesheet' />

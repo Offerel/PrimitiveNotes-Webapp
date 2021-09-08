@@ -224,7 +224,7 @@ li.task-list-item {
 	border-color: transparent;
 	overflow: auto;
 	display: block;
-	height: 36px;
+	height: 37px;
 }
 .tagify:hover {
 	border-color: transparent;
@@ -232,6 +232,10 @@ li.task-list-item {
 .tagify[readonly]:not(.tagify--mix) .tagify__tag > div::before {
 	background: gainsboro;
 	filter: unset;
+}
+.tagify[readonly]:not(.tagify--mix):not(.tagify--select) .tagify__tag>div::before {
+	box-shadow: 0 0 0 var(--tag-inset-shadow-size,1.1em) var(--tag-bg,#e5e5e5) inset;
+	filter: brightness(1);
 }
 .tagify.tedit {
 	background: white;
