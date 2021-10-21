@@ -4,6 +4,32 @@ body {
 	font-family: "Lucida Grande",Verdana,Arial,Helvetica,sans-serif;
 	font-size: 0.85em;
 }
+#dcMenu {
+	position: absolute;
+	z-index: 100;
+	top: 0;
+	background-color: #fff;
+	display: none;
+	box-shadow: 1px 3px 3px 0 rgba(50,50,50,.4);
+	border-radius: 5px;
+	border: 1px solid ghostwhite;
+}
+#cMenu {
+	margin: 0;
+	padding: 0;
+}
+#cMenu li {
+	list-style: none;
+	padding: 3px 10px 3px 30px;
+	background-repeat: no-repeat;
+	background-size: 1.2em;
+	background-position-x: 5px;
+	background-position-y: 4px;
+	cursor: context-menu;
+}
+#cMenu li:hover {
+	background-color: gainsboro;
+}
 .login {
 	background: url(../?bg=1) no-repeat center center fixed;
 	background-size: cover;
@@ -198,7 +224,7 @@ li.task-list-item {
 	border-color: transparent;
 	overflow: auto;
 	display: block;
-	height: 36px;
+	height: 37px;
 }
 .tagify:hover {
 	border-color: transparent;
@@ -206,6 +232,10 @@ li.task-list-item {
 .tagify[readonly]:not(.tagify--mix) .tagify__tag > div::before {
 	background: gainsboro;
 	filter: unset;
+}
+.tagify[readonly]:not(.tagify--mix):not(.tagify--select) .tagify__tag>div::before {
+	box-shadow: 0 0 0 var(--tag-inset-shadow-size,1.1em) var(--tag-bg,#e5e5e5) inset;
+	filter: brightness(1);
 }
 .tagify.tedit {
 	background: white;
@@ -239,6 +269,10 @@ li.task-list-item {
 #ntitle {
 	font-size: 2em;
 	padding-left: 5px;
+}
+#ntitle::placeholder {
+    font-size: .9em;
+    opacity: .4;
 }
 #noteheader input.edit {
 	border: thin solid #ced4da !important;
@@ -428,6 +462,11 @@ li.task-list-item {
 }
 .editor-toolbar button {
 	outline: 0;
+	margin: 0 5px;
+}
+.easymde-dropdown-content {
+	top: 28px;
+	background-color: #efefef;
 }
 .editor-toolbar button:disabled {
 	pointer-events: none;
@@ -441,6 +480,7 @@ li.task-list-item {
 	background-color: #efefef;
 	box-shadow: 1px 3px 3px 0 rgba(50,50,50,.4);
 	z-index: 10;
+	white-space: nowrap;
 }
 .EasyMDEContainer .CodeMirror {
 	border: 0;
