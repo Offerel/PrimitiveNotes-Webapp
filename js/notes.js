@@ -109,7 +109,7 @@ document.addEventListener("DOMContentLoaded", function () {
 				className: 'ma ma-save',
 				action: saveNote,
 				title: 'Save',
-				noDisable: true
+				noDisable: true,
 			},
 			{
 				name: 'New',
@@ -117,7 +117,27 @@ document.addEventListener("DOMContentLoaded", function () {
 				action: newNote,
 				title: 'New',
 				noDisable: true
-			}, '|',
+			}, 
+			{
+				name: 'File',
+				className: 'ma ma-file',
+				title: 'File',
+				children: [
+					{
+						name: 'Save',
+						className: 'ma ma-save',
+						action: saveNote,
+						title: 'Save',
+					},
+					{
+						name: 'New',
+						className: 'ma ma-new',
+						action: newNote,
+						title: 'New'
+					}
+				]
+			},
+			'|',
 			{
 				name: 'Bold',
 				className: 'ma ma-bold',
@@ -251,8 +271,9 @@ document.addEventListener("DOMContentLoaded", function () {
 		document.getElementById('source').addEventListener('click', oSource);
 		document.getElementById('nsearch').addEventListener('keyup', searchList, false);
 		document.getElementById('localFile').addEventListener('change', uploadFile, false);
-		switchButtons('edit');
+		switchButtons('new');
 		document.getElementById('ntitle').value = '';
+		document.getElementById('ntitle').placeholder = 'Enter title';
 		tagify.removeAllTags();
 		document.getElementById('author').value = '';
 		document.getElementById('author').readOnly = false;
@@ -532,7 +553,6 @@ function editNOTE(nname) {
 			document.getElementById('source').readOnly = false;
 			switchButtons('edit');
 			tagify.setReadonly(false);
-			document.querySelector('.ma-preview').classList.add('pview');
 		}
 	}
 	xhr.open("POST", document.location.pathname, true);
@@ -551,8 +571,6 @@ function tpreview() {
 		document.getElementById('source').readOnly = false;
 		switchButtons('edit');
 		tagify.setReadonly(false);
-		document.querySelector('#noteheader .tagify').classList.add('tedit');
-		document.querySelector('.ma-preview').classList.add('pview');
 	} else {
 		document.getElementById('ntitle').disabled = true;
 		document.getElementById('author').readOnly = true;
@@ -560,7 +578,6 @@ function tpreview() {
 		switchButtons('view');
 		tagify.setReadonly(true);
 		document.querySelector('#noteheader .tagify').classList.remove('tedit');
-		document.querySelector('.ma-preview').classList.remove('pview');
 		getTOC();
 	}
 
@@ -641,7 +658,6 @@ function showNOTE(nname) {
 			document.getElementById('author').readOnly = true;
 			document.getElementById('source').readOnly = true;
 			switchButtons('view');
-			document.querySelector('.ma-preview').classList.remove('pview');
 			tagify.setReadonly(true);
 			document.querySelector('#noteheader .tagify').classList.remove('tedit');
 			getTOC();
@@ -746,10 +762,22 @@ function switchButtons(mode) {
 		if (mode == 'view') {
 			document.querySelector('button.New.ma').style.display = 'inline-block';
 			document.querySelector('button.Save.ma').style.display = 'none';
+			document.querySelector('button.File.ma').style.display = 'none';
+			document.querySelector('.ma-preview').classList.remove('pview');
 			if (button.classList.contains('no-disable') == false) button.classList.add('ma-disabled');
-		} else {
+		} else if (mode == 'new') {
 			document.querySelector('button.New.ma').style.display = 'none';
 			document.querySelector('button.Save.ma').style.display = 'inline-block';
+			document.querySelector('button.File.ma').style.display = 'none';
+			document.querySelector('.ma-preview').classList.add('pview');
+			document.querySelector('#noteheader .tagify').classList.add('tedit');
+			if (button.classList.contains('no-disable') == false) button.classList.remove('ma-disabled');
+		} else if (mode == 'edit') {
+			document.querySelector('button.New.ma').style.display = 'none';
+			document.querySelector('button.Save.ma').style.display = 'none';
+			document.querySelector('button.File.ma').style.display = 'inline-block';
+			document.querySelector('.ma-preview').classList.add('pview');
+			document.querySelector('#noteheader .tagify').classList.add('tedit');
 			if (button.classList.contains('no-disable') == false) button.classList.remove('ma-disabled');
 		}
 	});
@@ -771,7 +799,7 @@ function newNote() {
 	tagify.removeAllTags();
 	tagify.setReadonly(false);
 	document.querySelector('#noteheader .tagify').classList.add('tedit');
-	switchButtons('edit');
+	switchButtons('new');
 	window.document.title = cval.title + ' - New';
 }
  

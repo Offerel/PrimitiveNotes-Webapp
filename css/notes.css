@@ -270,6 +270,10 @@ li.task-list-item {
 	font-size: 2em;
 	padding-left: 5px;
 }
+#ntitle::placeholder {
+    font-size: .9em;
+    opacity: .4;
+}
 #noteheader input.edit {
 	border: thin solid #ced4da !important;
 	background: white !important;

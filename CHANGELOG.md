@@ -4,6 +4,7 @@ ChangeLog
 -------------------------
 - Added contextmenus
 - Fixed linebreak detection for YAML
+- Fixed CSS editor mode
 - Updated Turndown to 7.1.1
 - Updated tagify tp 4.7.2
 

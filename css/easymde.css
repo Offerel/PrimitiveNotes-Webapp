@@ -20,6 +20,10 @@
 .easymde-dropdown {
 	border: 1px solid transparent !important;
 }
+.cm-link {
+	max-width: 800px;
+	display: table-cell;
+}
 .ma {
 	background-repeat: no-repeat!important;
 	margin: 0 5px!important;
@@ -29,6 +33,9 @@
 .ma-disabled {
 	pointer-events: none;
 	opacity: .2;
+}
+.ma-file {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'%3E%3Cpath d='M7 2v46h36V14.594l-.281-.313-12-12L30.406 2Zm2 2h20v12h12v30H9Zm22 1.438L39.563 14H31Z'/%3E%3C/svg%3E") !important;
 }
 .ma-new {
 	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-0.4 -0.4 5 5'%3E%3Cpath d='M2.117 0a2.117 2.117 0 102.116 2.117A2.119 2.119 0 002.117 0zm0 4.035a1.918 1.918 0 111.918-1.918 1.92 1.92 0 01-1.918 1.918z'/%3E%3Cpath d='M2.977 2.017h-.761v-.76a.1.1 0 00-.199 0v.76h-.76a.1.1 0 000 .199h.76v.76a.1.1 0 00.199 0v-.76h.76a.1.1 0 000-.199z'/%3E%3C/svg%3E") !important;
